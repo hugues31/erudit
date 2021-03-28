@@ -16,7 +16,7 @@ class Environment(ABC):
         pass
 
     @abstractmethod
-    def reset(self):
+    def reset(self) -> Feedback:
         pass
 
     @abstractmethod

@@ -24,6 +24,11 @@ class Space:
     def __contains__(self, x):
         return self.contains(x)
 
+    
+    @abstractmethod
+    def __len__(self):
+        pass
+
 
 class DiscreteSpace(Space):
     def __init__(self, n):
@@ -32,3 +37,6 @@ class DiscreteSpace(Space):
 
     def sample(self):
         return np.random.randint(low=0, high=self.n)
+
+    def __len__(self):
+        return self.n

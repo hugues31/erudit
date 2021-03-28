@@ -28,10 +28,14 @@ class Position:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
+    
+
 
 class FrozenLake(Environment):
     def __init__(self, config: dict = {}):
         super().__init__(config)
+
+        self.normal_cell_reward = self.config.get("normal_cell_reward", 0)
 
         self.current_state = 0
         # 4 possible actions: 0: top, 1: right, 2: bottom, 3: left
@@ -42,6 +46,15 @@ class FrozenLake(Environment):
         self.holes_states = [Position(1, 1), Position(3, 1), Position(3, 2), Position(0, 3)]
         
         self.reset()
+    
+    def position_to_int(self, position: Position) -> int:
+        """
+        Convert a position to its value state
+        E.g: (2,3) -> 14 for a grid-size of 4
+        """
+
+        return position.y * self.grid_size + position.x
+
 
     def get_current_position(self) -> Position:
         for y, col in enumerate(self.states):
@@ -74,41 +87,40 @@ class FrozenLake(Environment):
         self.time_step += 1
 
         # Take the action
-        action = Direction(action)
+        direction = Direction(action)
         prob = np.random.randint(low=-1, high=2)
-        current_pos = self.get_current_position()
-
+        old_pos = self.get_current_position()
 
         # We take the expected action
-        if action == Direction.TOP:
-            new_pos = Position(current_pos.x, current_pos.y - 1)
+        if direction == Direction.TOP:
+            new_pos = Position(old_pos.x, old_pos.y - 1)
 
-        elif action == Direction.RIGHT:
-            new_pos = Position(current_pos.x + 1, current_pos.y)
+        elif direction == Direction.RIGHT:
+            new_pos = Position(old_pos.x + 1, old_pos.y)
 
-        elif action == Direction.BOTTOM:
-            new_pos = Position(current_pos.x, current_pos.y + 1)
+        elif direction == Direction.BOTTOM:
+            new_pos = Position(old_pos.x, old_pos.y + 1)
 
-        elif action == Direction.LEFT:
-            new_pos = Position(current_pos.x - 1, current_pos.y)
+        elif direction == Direction.LEFT:
+            new_pos = Position(old_pos.x - 1, old_pos.y)
 
         else:
-            raise Exception(f"Action {action} is not valid.")
+            raise Exception(f"Action {direction} is not valid.")
 
         # agent slip and instead turns left (if prob == -1) or right (== 1)
         if prob in [-1, 1]:
             # if movement is vertical
-            if new_pos.y - current_pos.y != 0:
-                new_pos = Position(current_pos.x + prob, current_pos.y)
+            if new_pos.y - old_pos.y != 0:
+                new_pos = Position(old_pos.x + prob, old_pos.y)
 
             # mouvement is horizontal
             else:
-                new_pos = Position(current_pos.x, current_pos.y - prob)
+                new_pos = Position(old_pos.x, old_pos.y - prob)
 
         self.set_current_position(new_pos)
 
         # Compute the feedback
-        obs = self.get_current_position()
+        new_pos = self.get_current_position()
 
         if self.is_in_hole():
             reward = -1
@@ -119,11 +131,26 @@ class FrozenLake(Environment):
             done = True
 
         else:
-            reward = 0
+            reward = self.normal_cell_reward
             done = False
 
-        return Feedback(obs, reward, done)
+        old_state = self.position_to_int(old_pos)
+        new_state = self.position_to_int(new_pos)
+        return Feedback(old_state, new_state, action, reward, done)
 
+    def reset(self):
+        self.time_step = 0
+        self.states = [[State.NORMAL] * self.grid_size for i in range(self.grid_size)]
+        self.states[0][0] = State.ROBOT
+        self.states[-1][-1] = State.GOAL
+
+        for position in self.holes_states:
+            self.states[position.x][position.y] = State.HOLE
+
+        return Feedback(None, 0, None, None, False)
+
+
+    
     def render(self, mode="terminal"):
         flat_states = []
         for y, col in enumerate(self.states):
@@ -146,17 +173,6 @@ class FrozenLake(Environment):
 
         print(f"           === Time step {self.time_step} ===")
         print(grid)
-
-
-
-    def reset(self):
-        self.time_step = 0
-        self.states = [[State.NORMAL] * self.grid_size for i in range(self.grid_size)]
-        self.states[0][0] = State.ROBOT
-        self.states[-1][-1] = State.GOAL
-
-        for position in self.holes_states:
-            self.states[position.x][position.y] = State.HOLE
 
     def get_action_space(self) -> ActionSpace:
         return self.action_space

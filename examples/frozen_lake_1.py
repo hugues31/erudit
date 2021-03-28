@@ -32,4 +32,4 @@ if __name__ == "__main__":
 
         frozen_lake.reset()
 
-print(f"Agent has reached the goal in {attempts} attempts.")
+    print(f"Agent has reached the goal in {attempts} attempts.")
