@@ -11,4 +11,5 @@ class Action:
 class ActionSpace(Space):
     pass
 
-DiscreteActionSpace = DiscreteSpace
+class DiscreteActionSpace(ActionSpace, DiscreteSpace):
+    pass

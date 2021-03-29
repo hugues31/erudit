@@ -1,2 +1,2 @@
 from .decay_schedule import decay_schedule
-from .generate_trajectory import generate_trajectory
+from .generate_trajectory import generate_trajectory, generate_trajectory_from_action

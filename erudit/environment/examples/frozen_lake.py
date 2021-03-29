@@ -1,7 +1,7 @@
 import numpy as np
 from enum import Enum
 
-from erudit import Environment, Action, ActionSpace, DiscreteActionSpace, Feedback
+from erudit import Environment, Action, DiscreteActionSpace, DiscreteObservationSpace, Feedback
 
 class Direction(Enum):
     TOP = 0
@@ -35,17 +35,19 @@ class FrozenLake(Environment):
     def __init__(self, config: dict = {}):
         super().__init__(config)
 
+        # we create a 4x4 grid
+        self.grid_size = 4
         self.normal_cell_reward = self.config.get("normal_cell_reward", 0)
 
         self.current_state = 0
         # 4 possible actions: 0: top, 1: right, 2: bottom, 3: left
         self.action_space = DiscreteActionSpace(4)
+        # Agent can only observe 1 space : the current cell 
+        self.observation_space = DiscreteObservationSpace(self.grid_size ** 2)
 
-        # we create a 4x4 grid
-        self.grid_size = 4
         self.holes_states = [Position(1, 1), Position(3, 1), Position(3, 2), Position(0, 3)]
         
-        self.reset()
+
     
     def position_to_int(self, position: Position) -> int:
         """
@@ -134,6 +136,8 @@ class FrozenLake(Environment):
             reward = self.normal_cell_reward
             done = False
 
+        done = True if self.time_step > self.steps_limit else done
+
         old_state = self.position_to_int(old_pos)
         new_state = self.position_to_int(new_pos)
         return Feedback(old_state, new_state, action, reward, done)
@@ -174,10 +178,11 @@ class FrozenLake(Environment):
         print(f"           === Time step {self.time_step} ===")
         print(grid)
 
-    def get_action_space(self) -> ActionSpace:
+    def get_action_space(self) -> DiscreteActionSpace:
         return self.action_space
 
-
+    def get_observation_space(self) -> DiscreteActionSpace:
+        return self.observation_space
 # ┌────────┬────────┬────────┬────────┐
 # │ 3.14   │ 3.14   │ 3.14   │ 3.14   │
 # │        │        │        │        │
